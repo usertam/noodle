@@ -1,20 +1,25 @@
 #!/bin/bash
 set -e
 
-# set project root
-PROJECT="$(dirname $0)"
+# cd to project root
+cd "$(dirname $0)"
+
+# initialize git if nessesary
+if [ ! -d records/.git ]; then
+    mkdir -p records
+    git -C records init
+fi
 
 # fetch the latest sites via python script
-cd $PROJECT
 python3 fetch_sites.py
 
 # report and exit if no changes
 if [ ! "$(git -C records ls-files -mo)" ]; then
     echo "[*] Already up-to-date. "
     exit 0
+else
+    echo "[*] Changes found. Writing commit. "
 fi
-
-echo "[*] Changes found. Writing commit. "
 
 # commit modified and new files
 FILES=$(git -C records ls-files -mo | paste -s -d\ )
