@@ -38,15 +38,11 @@ git -C records show | \
     tr -s ' ' | cut -d\  -f3 | \
     grep 'https' | grep 'resource\|assign' > fetch.txt || true
 
-# terminate if nothing in fetch list
-if [ ! -s fetch.txt ]; then
+# fetch files if nessesary
+if [ -s fetch.txt ]; then
+    echo "[*] Fetching new files. "
+    mkdir -p downloads
+    python3 fetch_files.py
+else
     echo "[*] Nothing to fetch. "
-    exit 0
 fi
-
-# make sure the hardcoded directory exists
-mkdir -p downloads
-
-# fetch files via python script
-echo "[*] Fetching new files. "
-python3 fetch_files.py
