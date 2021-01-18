@@ -31,10 +31,6 @@ echo "[*] Showing full commit. "
 sleep 3
 git -C records show
 
-# ask user whether to fetch the new files or not
-read -p "[?] Fetch updated files? [y/N] " CONT
-[ "$(echo $CONT | tr '[A-Z]' '[a-z]')" = "y" ] || exit 0
-
 # generate fetch list
 echo "[*] Writing updated URLs to fetch list. "
 git -C records show | \
