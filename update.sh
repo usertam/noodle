@@ -11,6 +11,7 @@ if [ ! -d records/.git ]; then
 fi
 
 # fetch the latest sites via python script
+echo "[*] Fetching latest sites. "
 python3 fetch_sites.py
 
 # report and exit if no changes
