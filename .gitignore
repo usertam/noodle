@@ -3,3 +3,6 @@ downloads/
 records/
 fetch.txt
 secret
+mail/*.txt
+mail/*.html
+mail/token.pickle

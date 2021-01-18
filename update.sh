@@ -26,11 +26,6 @@ FILES=$(git -C records ls-files -mo | paste -s -d\ )
 git -C records add $FILES
 git -C records commit -m "update $FILES"
 
-# launch "git show"
-echo "[*] Showing full commit. "
-sleep 3
-git -C records show
-
 # generate fetch list
 echo "[*] Writing updated URLs to fetch list. "
 git -C records show | \
@@ -46,3 +41,21 @@ if [ -s fetch.txt ]; then
 else
     echo "[*] Nothing to fetch. "
 fi
+
+# go to mail directory
+cd mail/
+
+# make email
+echo "[*] Making email. "
+bash make.sh
+
+# send email via python script
+echo "[*] Sending email. "
+python3 send.py
+
+# go back to project root
+cd "$(dirname $0)"
+
+# reset workspace
+echo "[*] Resetting workspace. "
+bash tools/reset.sh
