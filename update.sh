@@ -55,8 +55,8 @@ echo "[*] Sending email. "
 python3 send.py
 
 # go back to project root
-cd "$(dirname $0)"
+cd ../
 
 # reset workspace
 echo "[*] Resetting workspace. "
-bash tools/reset.sh
+bash reset.sh
