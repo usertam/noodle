@@ -37,7 +37,7 @@ git -C records show | \
 # fetch files if nessesary
 if [ -s fetch.txt ]; then
     echo "[*] Fetching new files. "
-    mkdir -p downloads
+    rm -f downloads/*
     python3 fetch_files.py
 else
     echo "[*] Nothing to fetch. "
@@ -53,10 +53,3 @@ bash make.sh
 # send email via python script
 echo "[*] Sending email. "
 python3 send.py
-
-# go back to project root
-cd ../
-
-# reset workspace
-echo "[*] Resetting workspace. "
-bash reset.sh
