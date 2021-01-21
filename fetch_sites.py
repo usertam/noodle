@@ -59,40 +59,40 @@ def fetch_page(session, view_id, filename):
         # write resources (lecture notes, assignments...)
         for module in section.xpath('./ul/li'):
 
-            if len(module.xpath('.//ul')) > 0:
-                # not resource, just a module of text
-                for text in module.xpath('.//ul/li//text()'):
+            for res in module.xpath('.//div[@class="activityinstance"]'):
+
+                if len(module.xpath('.//a[@class="aalink"]')) > 0:
+                    # resource is a link
+                    res = module.xpath('.//a[@class="aalink"]')[0]
+
+                # write resource name, and type if any
+                desc = res.xpath('.//text()')
+                f.write(" " * 2 + "* %s" % desc[0])
+                if len(desc) > 1:
+                    f.write(" [%s]" % desc[1].strip())
+
+                # write restricted tag if resource is dimmed
+                if len(module.xpath('.//div[contains(@class,"dimmed")]')) > 0:
+                    f.write(" [Restricted]")
+
+                # done tags, write newline
+                f.write("\n")
+
+                # write href if any
+                for href in res.xpath('./@href'):
+                    f.write(" " * 4 + "- %s\n" % href)
+
+            for res in module.xpath('.//div[@class="contentafterlink"]'):
+
+                for text in res.xpath('.//div/text()'):
+                    f.write(" " * 2 + "- %s\n" % text)
+
+                for text in res.xpath('.//p//text()'):
+                    f.write(" " * 2 + "- %s\n" % text)
+
+                # zoom recording links
+                for text in res.xpath('.//ul/li//text()'):
                     f.write(" " * 4 + "| %s\n" % text)
-                # proceed to next module when done
-                continue
-
-            if len(module.xpath('.//a[@class="aalink"]')) > 0:
-                # resource is a link
-                res = module.xpath('.//a[@class="aalink"]')[0]
-            else:
-                # resource is not a link, likely restricted
-                res = module.xpath('.//div[@class="activityinstance"]')[0]
-
-            # write resource name, and type if any
-            desc = res.xpath('.//text()')
-            f.write(" " * 2 + "* %s" % desc[0])
-            if len(desc) > 1:
-                f.write(" [%s]" % desc[1].strip())
-
-            # write restricted tag if resource is dimmed
-            if len(module.xpath('.//div[contains(@class,"dimmed")]')) > 0:
-                f.write(" [Restricted]")
-
-            # done tags, write newline
-            f.write("\n")
-
-            # write href if any
-            for href in res.xpath('./@href'):
-                f.write(" " * 4 + "- %s\n" % href)
-
-            # write resource text if any in list
-            for text in module.xpath('.//div[@class="contentafterlink"]//text()'):
-                f.write(" " * 2 + "- %s\n" % text)
 
         # write newline
         f.write("\n")
