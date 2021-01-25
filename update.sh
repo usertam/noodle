@@ -29,10 +29,9 @@ git -C records commit -m "update $FILES"
 
 # generate fetch list
 echo "[*] Writing updated URLs to fetch list. "
-git -C records show | \
-    sed -n '/^+[^+]/ s/^+//p' | \
-    tr -s ' ' | cut -d\  -f3 | \
-    grep 'https' | grep 'resource\|assign' > fetch.txt || true
+git -C records show -U0 | \
+    cut -d- -f2 | cut -d\  -f2 | \
+    grep 'https:' | grep 'resource\|assign' > fetch.txt || true
 
 # fetch files if nessesary
 if [ -s fetch.txt ]; then
