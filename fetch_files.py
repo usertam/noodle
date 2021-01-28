@@ -16,7 +16,7 @@ def login_sess():
     token = tree.xpath('//input[@name="logintoken"]/@value')[0]
 
     # get secret
-    f = open("secret", "r").read()
+    f = open("data/secret", "r").read()
     key = b64decode(f).decode("utf-8").rstrip().split(':', 1)
 
     # craft login payload
@@ -30,7 +30,7 @@ def login_sess():
     sess.post(login_url, data=payload)
     return sess
 
-def fetch_url(session, url):
+def fetch_url(session, url, dir):
     # get all herfs in page
     page = session.get(url)
     tree = html.fromstring(page.content)
@@ -51,15 +51,15 @@ def fetch_url(session, url):
 
     # download file
     r = session.get(href)
-    with open(os.path.join("downloads", name), "wb") as f:
+    with open(os.path.join(dir, name), "wb") as f:
         f.write(r.content)
 
 # create login session
 session = login_sess()
 
 # read from file and download each url
-with open("fetch.txt", "r") as f:
+with open("data/files.txt", "r") as f:
     for url in f:
-        fetch_url(session, url)
+        fetch_url(session, url, "files")
     
 print("[+] Fetching files done!")

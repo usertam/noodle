@@ -15,7 +15,7 @@ def login_sess():
     token = tree.xpath('//input[@name="logintoken"]/@value')[0]
 
     # get secret
-    f = open("secret", "r").read()
+    f = open("data/secret", "r").read()
     key = b64decode(f).decode("utf-8").rstrip().split(':', 1)
 
     # craft login payload
@@ -29,13 +29,13 @@ def login_sess():
     sess.post(login_url, data=payload)
     return sess
 
-def fetch_page(session, view_id, filename):
+def fetch_page(session, url, txt):
     # fetch page using login session
-    page = session.get("https://moodle.uowplatform.edu.au/course/view.php?id=%s" % view_id)
+    page = session.get(url)
     tree = html.fromstring(page.content)
 
     # open file
-    f = open(filename, "w")
+    f = open(txt, "w")
 
     # write page title
     header = tree.xpath('./body/div/div/div/header')[0]
@@ -103,12 +103,10 @@ def fetch_page(session, view_id, filename):
 # create login session
 session = login_sess()
 
-# write site content to file
-fetch_page(session, "00010", "records/A.txt")
-fetch_page(session, "00011", "records/B.txt")
-fetch_page(session, "00012", "records/C.txt")
-fetch_page(session, "00013", "records/D.txt")
-fetch_page(session, "00014", "records/E.txt")
-fetch_page(session, "00015", "records/F.txt")
+# write site content to files
+with open("data/sites.txt", "r") as f:
+    for entry in f:
+        txt, url = entry.split(":", 1)
+        fetch_page(session, url, txt)
 
 print("[+] Fetching sites done!")

@@ -1,8 +1,8 @@
 #!/bin/bash
 set -e
 
-# cd to project root
-cd "$(dirname $0)/../"
+# cd to data
+cd "$(dirname $0)/../data/"
 
 # prompt for username and password
 read -p "Username: " USER

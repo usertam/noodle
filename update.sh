@@ -5,9 +5,9 @@ set -e
 cd "$(dirname $0)"
 
 # initialize git if necessary
-if [ ! -d records/.git ]; then
-    mkdir -p records
-    git -C records init
+if [ ! -d sites/.git ]; then
+    mkdir -p sites
+    git -C sites init
 fi
 
 # fetch the latest sites via python script
@@ -15,7 +15,7 @@ echo "[*] Fetching latest sites. "
 python3 fetch_sites.py
 
 # report and exit if no changes
-if [ ! "$(git -C records ls-files -mo)" ]; then
+if [ ! "$(git -C sites ls-files -mo)" ]; then
     echo "[*] Already up-to-date. "
     exit 0
 else
@@ -23,24 +23,24 @@ else
 fi
 
 # commit modified and new files
-FILES=$(git -C records ls-files -mo | paste -s -d\ )
-git -C records add $FILES
-git -C records commit -m "update $FILES"
+FILES=$(git -C sites ls-files -mo | paste -s -d\ )
+git -C sites add $FILES
+git -C sites commit -m "update $FILES"
 
 # generate fetch list
 echo "[*] Writing updated URLs to fetch list. "
-git -C records show -U0 | \
+git -C sites show -U0 | \
     cut -d- -f2 | cut -d\  -f2 | \
-    grep 'https:' | grep 'resource\|assign' > fetch.txt || true
+    grep 'https:' | grep 'resource\|assign' > data/files.txt || true
 
 # fetch files if necessary
-if [ -s fetch.txt ]; then
+if [ -s data/files.txt ]; then
     echo "[*] Fetching new files. "
-    rm -f downloads/*
+    rm -f files/*
     python3 fetch_files.py
 else
     echo "[*] Nothing to fetch. "
-    rm -f fetch.txt
+    rm -f data/files.txt
 fi
 
 # go to mail directory

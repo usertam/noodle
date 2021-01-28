@@ -5,7 +5,7 @@ set -e
 cd "$(dirname $0)"
 
 # write email content
-git -C "../records" show --color=always | aha -s > body.html
+git -C "../sites" show --color=always | aha -s > body.html
 sed -i 's+</style>+pre {font-size:12px;}\n</style>+' body.html
 
 # make email

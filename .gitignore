@@ -1,8 +1,7 @@
 __pycache__/
-downloads/
-records/
-fetch.txt
-secret
+files/
+sites/
+data/
 mail/*.txt
 mail/*.html
 mail/token.pickle
