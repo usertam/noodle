@@ -4,7 +4,7 @@ set -e
 # cd to project root
 cd "$(dirname $0)"
 
-# initialize git if nessesary
+# initialize git if necessary
 if [ ! -d records/.git ]; then
     mkdir -p records
     git -C records init
@@ -33,7 +33,7 @@ git -C records show -U0 | \
     cut -d- -f2 | cut -d\  -f2 | \
     grep 'https:' | grep 'resource\|assign' > fetch.txt || true
 
-# fetch files if nessesary
+# fetch files if necessary
 if [ -s fetch.txt ]; then
     echo "[*] Fetching new files. "
     rm -f downloads/*
