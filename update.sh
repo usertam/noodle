@@ -40,6 +40,7 @@ if [ -s fetch.txt ]; then
     python3 fetch_files.py
 else
     echo "[*] Nothing to fetch. "
+    rm -f fetch.txt
 fi
 
 # go to mail directory
