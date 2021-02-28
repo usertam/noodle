@@ -239,8 +239,8 @@ if not fetch:
 print("[*] Cleaning up directory.")
 
 (_, _, leftovers) = next(os.walk("files"))
-if leftovers and not os.path.exists("sites/archive"):
-    os.makedirs("sites/archive")
+if leftovers and not os.path.exists(os.path.join("files", "archive")):
+    os.makedirs(os.path.join("files", "archive"))
 
 # move previously fetched files to archive
 for f in leftovers:
