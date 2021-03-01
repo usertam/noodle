@@ -17,7 +17,7 @@ def login_creds():
     except:
         print("[-] Unable to read secret.")
         print("[-] Try \"python data/secret.py\" to create one.")
-        exit()
+        sys.exit(0)
     return key
 
 def login_sess():
@@ -35,7 +35,7 @@ def login_sess():
         token = tree.xpath('//input[@name="logintoken"]/@value')[0]
     except:
         print("[-] Unable to reach Moodle.")
-        exit()
+        sys.exit(0)
 
     # craft login payload
     payload = {
@@ -54,7 +54,7 @@ def login_sess():
         user = tree.xpath('//span[@class="usertext mr-1"]/text()')[0]
     except:
         print("[-] Unable to login. Check the password?")
-        exit()
+        sys.exit(0)
 
     return sess, user
 
@@ -173,7 +173,7 @@ with open("data/sites.conf", "r") as f:
 if not fetch:
     print("[-] Nothing in fetch list!")
     print("[-] Configure sites to fetch in data/sites.conf.")
-    exit()
+    sys.exit(0)
 
 if not os.path.exists("sites"):
     os.makedirs("sites")
@@ -203,7 +203,7 @@ files = modified_files + repo.untracked_files
 # if nothing is changed then exit
 if not files:
     print("[*] Already up-to-date!")
-    exit()
+    sys.exit(0)
 
 if not init:
     print("[*] Site changes found! Writing commit.")
@@ -214,7 +214,7 @@ index.commit(" ".join(files))
 
 if init:
     print("[+] Initialization completed!")
-    exit()
+    sys.exit(0)
 
 print("=" * 48)
 print("[+] Commit preview:")
@@ -234,7 +234,7 @@ for line in repo.git.diff("HEAD~1").split("\n"):
 # if nothing in fetch list then exit
 if not fetch:
     print("[*] No new files to fetch.")
-    exit()
+    sys.exit(0)
 
 print("[*] Cleaning up directory.")
 
