@@ -3,6 +3,7 @@
 from base64 import b64decode
 from lxml import html
 from datetime import datetime
+from urllib.parse import unquote
 import git
 import os, os.path
 import shutil
@@ -140,7 +141,7 @@ def fetch_file(sess, url, dir):
             href.append(h.split("?")[0])
 
     for h in href:
-        name = os.path.basename(h)
+        name = unquote(os.path.basename(h))
         print("[+] Get: %s" % name)
         r = sess.get(h)
         with open(os.path.join(dir, name), "wb") as f:
