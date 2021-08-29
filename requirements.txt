@@ -1,0 +1,4 @@
+jsonpickle
+pygit2
+requests
+lxml
