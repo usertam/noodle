@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 
-import datetime
 import json
 import os, os.path
 import sys
+from datetime import datetime
 from urllib.parse import unquote
 
 import jsonpickle
@@ -24,8 +24,8 @@ class Module:
 
         # set description if any
         desc_tree = tree.xpath('.//div[@class="contentafterlink"]')
-        desc = desc_tree[0].xpath('.//div/text() | .//p//text() | .//ul/li//text()')[0] if len(desc_tree) > 0 else None
-        self.desc = ' '.join(desc.split()) if desc is not None else None
+        desc = desc_tree[0].xpath('.//div/text() | .//p//text() | .//ul/li//text()') if len(desc_tree) > 0 else None
+        self.desc = ' '.join(desc[0].split()) if desc is not None else None
 
         # set tags, aka the rest of the text()
         tags = [ t.strip() for t in text ]
@@ -45,9 +45,17 @@ class Module:
             for link in tree.xpath('//section[@id="region-main"]/div[@role="main"]//a/@href'):
                 if 'pluginfile.php' in link:
                     files.append(link.split("?")[0])
-        
+
         # convert files to be immutable
         self.files = tuple(files)
+
+        # TODO: FOLDER
+
+    def __hash__(self) -> int:
+        return hash((self.title, self.desc, self.tags, self.href, self.files))
+
+    def __eq__(self, other) -> bool:
+        return hash(self) == hash(other)
 
 
 class Section:
@@ -57,8 +65,8 @@ class Section:
 
         # set description if any
         desc_tree = tree.xpath('.//div[@class="summary"]')[0]
-        desc = desc_tree[0].xpath('.//div/text() | .//p//text() | .//ul/li//text()')[0] if len(desc_tree) > 0 else None
-        self.desc = ' '.join(desc.split()) if desc is not None else None
+        desc = desc_tree[0].xpath('.//div/text() | .//p//text() | .//ul/li//text()') if len(desc_tree) > 0 else None
+        self.desc = ' '.join(desc[0].split()) if desc is not None and len(desc) > 0 else None
 
         # add modules
         modules = []
@@ -67,6 +75,12 @@ class Section:
 
         # convert modules to be immutable
         self.modules = tuple(modules)
+
+    def __hash__(self) -> int:
+        return hash((self.title, self.desc, self.modules))
+
+    def __eq__(self, other) -> bool:
+        return hash(self) == hash(other)
 
 
 class Site:
@@ -78,6 +92,12 @@ class Site:
         for sec_tree in tree.xpath('//li[@role="region"]/div[@class="content"]'):
             sections.append(Section(sec_tree))
         self.sections = tuple(sections)
+
+    def __hash__(self) -> int:
+        return hash((self.title, self.code, self.sections))
+
+    def __eq__(self, other) -> bool:
+        return hash(self) == hash(other)
 
     def write_markdown(self, file):
         with open(file, 'w') as f:
@@ -132,7 +152,176 @@ class Site:
                         f.write(f'[{code}]: {file} "Direct Link"\n')
 
                 # default padding
-                f.write('\n')  
+                f.write('\n')
+
+
+def find_lcs(S1, S2):
+    # populate the table
+    m, n = len(S1), len(S2)
+    table = [ [ 0 for x in range(n+1) ] for x in range(m+1) ]
+    for i in range(1, m+1):
+        for j in range(1, n+1):
+            if S1[i-1] == S2[j-1]:
+                table[i][j] = table[i-1][j-1] + 1
+            else:
+                table[i][j] = max(table[i-1][j], table[i][j-1])
+
+    # find the lcs
+    lcs = []
+    index = table[m][n]
+    while m > 0 and n > 0:
+        if S1[m-1] == S2[n-1]:
+            lcs.insert(0, S1[m-1])
+            m -= 1
+            n -= 1
+            index -= 1
+        elif table[m-1][n] > table[m][n-1]:
+            m -= 1
+        else:
+            n -= 1
+
+    return lcs
+
+
+class DiffSec:
+    def __init__(self, sec_a, sec_b):
+        self.title = sec_b.title
+        self.desc = sec_b.desc
+        self.flag = 0
+        lcs_mods = find_lcs(sec_a.modules, sec_b.modules)
+        modules = []
+        for i in range(0, max(len(sec_a.modules), len(sec_b.modules)) - 1):
+            if i < len(sec_a.modules) and sec_a.modules[i] not in lcs_mods:
+                module = sec_a.modules[i]
+                module.flag = 1
+                modules.append(module)
+            if i < len(sec_b.modules) and sec_b.modules[i] not in lcs_mods:
+                module = sec_b.modules[i]
+                module.flag = 2
+                modules.append(module)
+        self.modules = modules
+
+
+class Diff:
+    def __init__(self, site, prev):
+        # basic info
+        self.title = site.title
+        self.code = site.code
+
+        # build longest common subsequence
+        lcs_secs = find_lcs(site.sections, prev.sections)
+
+        # generate whole section diffs
+        sections = []
+        for i in range(0, max(len(site.sections), len(prev.sections)) - 1):
+            if i < len(prev.sections) and prev.sections[i] not in lcs_secs:
+                section = prev.sections[i]
+                section.flag = 1
+                sections.append(section)
+            if i < len(site.sections) and site.sections[i] not in lcs_secs:
+                section = site.sections[i]
+                section.flag = 2
+                sections.append(section)
+
+        # replace consecutive del/add diffs with precise section diffs
+        i = 0
+        while i < len(sections) - 1:
+            if sections[i].flag == 1 and sections[i+1].flag == 2:
+                if sections[i].title == sections[i+1].title:
+                    section = DiffSec(sections[i], sections[i+1])
+                    sections.pop(i)
+                    sections.pop(i)
+                    sections.insert(i, section)
+            i += 1
+
+        self.sections = sections
+
+    def write_markdown(self, file, time_a, time_b):
+        if len(self.sections) == 0: return
+        with open(file, 'w') as f:
+            # format commit times
+            if time_a.strftime('%x') == time_b.strftime('%x'):
+                time_b = time_b.strftime('%H:%M')
+            else:
+                time_b = time_b.strftime('%b %d %H:%M')
+            time_a = time_a.strftime('%b %d %H:%M')
+
+            # write site title and code
+            f.write(f'# {self.title}\n')
+            f.write(f'`{self.code}` ')
+            f.write(f'`DIFF: {time_a} ➝ {time_b}`\n')
+            f.write('\n')
+
+            # write custom css style
+            f.write('<style>\n')
+            f.write('add { color: green; }\n')
+            f.write('del { color: red; text-decoration: none; }\n')
+            f.write('file { float: right; font-size: 70%; }\n')
+            f.write('</style>\n')
+
+            for sec_code, section in enumerate(self.sections, start=1):
+                # color output according to diff flags
+                if section.flag == 1:
+                    prefix, suffix = '<del>', '</del>'
+                elif section.flag == 2:
+                    prefix, suffix = '<add>', '</add>'
+                else:
+                    prefix, suffix = '', ''
+
+                # write section title
+                f.write(f'## {prefix}{section.title}{suffix}\n')
+
+                # write section summary if any
+                if section.desc is not None:
+                    f.write(f'> <small>{prefix}{section.desc}{suffix}</small>\n')
+                    f.write('\n')
+
+                # write module entires
+                for mod_code, module in enumerate(section.modules, start=1):
+                    # color output according to diff flags
+                    if section.flag == 1:
+                        prefix, suffix = '<del>', '</del>'
+                    elif section.flag == 2:
+                        prefix, suffix = '<add>', '</add>'
+                    elif module.flag == 1:
+                        prefix, suffix = '<del>', '</del>'
+                    elif module.flag == 2:
+                        prefix, suffix = '<add>', '</add>'
+                    else:
+                        prefix, suffix = '', ''
+
+                    # write module title
+                    f.write(f'- {prefix}[{module.title}][s{sec_code}-{mod_code}]{suffix}\n')
+
+                    # write module files if any
+                    if len(module.files) > 0:
+                        # module files header
+                        f.write(' ' * 4 + f'<file>{prefix}DL: ')
+                        for file_code, file in enumerate(module.files, start=1):
+                            name = unquote(os.path.basename(file))
+                            code = f's{sec_code}-{mod_code}-f{file_code}'
+                            if file_code > 1: f.write(', ')
+                            f.write(f'[{name}][{code}]')
+                        # module files footer
+                        f.write(f'{suffix}</file>\n')
+
+                    # write module dscription if any
+                    if module.desc is not None:
+                        f.write(f'  - <small>{prefix}{module.desc}{suffix}</small>\n')
+
+                # write newline if no modules are written
+                if mod_code > 0:
+                    f.write('\n')
+
+                # write module and filesreferences
+                for mod_code, module in enumerate(section.modules, start=1):
+                    f.write(f'[s{sec_code}-{mod_code}]: {module.href} "{module.tags}"\n')
+                    for file_code, file in enumerate(module.files, start=1):
+                        code = f's{sec_code}-{mod_code}-f{file_code}'
+                        f.write(f'[{code}]: {file} "Direct Link"\n')
+
+                # default padding
+                f.write('\n')
 
 
 def load_config():
@@ -188,7 +377,7 @@ conf = load_config()
 
 print("=" * 48)
 print("[*] Noodle: Automated web scraper for Moodle.")
-print("[*] Started on:", datetime.datetime.now().strftime('%c'))
+print("[*] Started on:", datetime.now().strftime('%c'))
 print("=" * 48)
 
 # create login session
@@ -203,7 +392,7 @@ print("[*] Fetching course sites.")
 sites = conf['sites']
 if not sites:
     print("[-] Nothing in site entries!")
-    print("[-] Configure sites to fetch in data/sites.conf.")
+    print("[-] Configure sites to fetch in config.json.")
     sys.exit(0)
 
 # variables for fetch progress
@@ -224,7 +413,7 @@ for site in sites:
 
     # create object from tree and append data to object
     site['data'] = Site(tree)
-    site['time'] = datetime.datetime.now()
+    site['time'] = datetime.now()
 
 print(f"[+] {prog_now} sites fetched." + padding)
 
@@ -256,7 +445,7 @@ for site in sites:
 # write tree and compare; create commit only if there are changes
 tree_id = tree.write()
 signature = pygit2.Signature('noodle', 'noodle@localhost')
-if prev is None or repo.get(tree_id).diff_to_tree(prev.tree).__len__() != 0:
+if prev is None or len(repo.get(tree_id).diff_to_tree(prev.tree)) != 0:
     # create commit
     commit_id = repo.create_commit(
         head.name if head is not None else 'refs/heads/master',
@@ -273,8 +462,20 @@ if not os.path.exists('markdown'):
 # write site and diff markdowns
 for site in sites:
     # set site variables
-    code = site['data'].code
+    site_data = site['data']
+    code = site_data.code
 
     # write site data markdown
     file = os.path.join('markdown', code + '.md')
-    site['data'].write_markdown(file)
+    site_data.write_markdown(file)
+
+    # load the previous site, skip if none exists
+    name = code + '.json'
+    if prev is None or name not in prev.tree:
+        continue
+    prev_data = jsonpickle.loads(prev.tree[name].data.decode())
+
+    # write diff markdown
+    file = os.path.join('markdown', code + '.diff.md')
+    diff = Diff(site_data, prev_data)
+    diff.write_markdown(file, datetime.fromtimestamp(prev.commit_time).astimezone(), site['time'].astimezone())
