@@ -49,10 +49,20 @@ class Module:
         # convert files to be immutable
         self.files = tuple(files)
 
-        # TODO: FOLDER
+        # set folder sub files
+        folder = []
+        if 'Folder' in self.tags and self.href != '#':
+            page = sess.get(self.href)
+            tree = html.fromstring(page.content)
+            for link in tree.xpath('//div[@class="filemanager"]//a/@href'):
+                if 'pluginfile.php' in link:
+                    folder.append(link.split("?")[0])
+
+        # convert files to be immutable
+        self.folder = tuple(folder)
 
     def __hash__(self) -> int:
-        return hash((self.title, self.desc, self.tags, self.href, self.files))
+        return hash((self.title, self.desc, self.tags, self.href, self.files, self.folder))
 
     def __eq__(self, other) -> bool:
         return hash(self) == hash(other)
@@ -99,6 +109,14 @@ class Site:
     def __eq__(self, other) -> bool:
         return hash(self) == hash(other)
 
+    def files(self) -> list:
+        ret = []
+        for section in self.sections:
+            for module in section.modules:
+                for file in module.files + module.folder:
+                    ret.append(file)
+        return ret
+
     def write_markdown(self, file):
         with open(file, 'w') as f:
             # write site title and code
@@ -120,11 +138,13 @@ class Site:
                     f.write('\n')
 
                 # write module entires
+                mod_code = 0
                 for mod_code, module in enumerate(section.modules, start=1):
                     # write module title
                     f.write(f'- [{module.title}][s{sec_code}-{mod_code}]\n')
 
                     # write module files if any
+                    file_code = 1
                     if len(module.files) > 0:
                         # module files header
                         f.write(' ' * 4 + '<file>DL: ')
@@ -136,18 +156,24 @@ class Site:
                         # module files footer
                         f.write('</file>\n')
 
-                    # write module dscription if any
+                    # write module description if any
                     if module.desc is not None:
                         f.write(f'  - <small>{module.desc}</small>\n')
+
+                    # write files inside folder
+                    for file_code, file in enumerate(module.folder, start=file_code):
+                        name = unquote(os.path.basename(file))
+                        code = f's{sec_code}-{mod_code}-f{file_code}'
+                        f.write(f'  - [{name}][{code}]\n')
 
                 # write newline if no modules are written
                 if mod_code > 0:
                     f.write('\n')
 
-                # write module and filesreferences
+                # write module and files references
                 for mod_code, module in enumerate(section.modules, start=1):
                     f.write(f'[s{sec_code}-{mod_code}]: {module.href} "{module.tags}"\n')
-                    for file_code, file in enumerate(module.files, start=1):
+                    for file_code, file in enumerate(module.files + module.folder, start=1):
                         code = f's{sec_code}-{mod_code}-f{file_code}'
                         f.write(f'[{code}]: {file} "Direct Link"\n')
 
@@ -236,6 +262,19 @@ class Diff:
 
         self.sections = sections
 
+    def files(self) -> list:
+        ret = []
+        for section in self.sections:
+            if section.flag == 1:
+                continue
+            for module in section.modules:
+                if section.flag == 0:
+                    if module.flag == 1:
+                        continue
+                for file in module.files + module.folder:
+                    ret.append(file)
+        return ret
+
     def write_markdown(self, file, time_a, time_b):
         if len(self.sections) == 0: return
         with open(file, 'w') as f:
@@ -277,6 +316,7 @@ class Diff:
                     f.write('\n')
 
                 # write module entires
+                mod_code = 0
                 for mod_code, module in enumerate(section.modules, start=1):
                     # color output according to diff flags
                     if section.flag == 1:
@@ -291,32 +331,39 @@ class Diff:
                         prefix, suffix = '', ''
 
                     # write module title
-                    f.write(f'- {prefix}[{module.title}][s{sec_code}-{mod_code}]{suffix}\n')
+                    f.write(f'- [{prefix}{module.title}{suffix}][s{sec_code}-{mod_code}]\n')
 
                     # write module files if any
+                    file_code = 1
                     if len(module.files) > 0:
                         # module files header
-                        f.write(' ' * 4 + f'<file>{prefix}DL: ')
+                        f.write(' ' * 4 + '<file>DL: ')
                         for file_code, file in enumerate(module.files, start=1):
                             name = unquote(os.path.basename(file))
                             code = f's{sec_code}-{mod_code}-f{file_code}'
                             if file_code > 1: f.write(', ')
-                            f.write(f'[{name}][{code}]')
+                            f.write(f'[{prefix}{name}{suffix}][{code}]')
                         # module files footer
-                        f.write(f'{suffix}</file>\n')
+                        f.write('</file>\n')
 
-                    # write module dscription if any
+                    # write module description if any
                     if module.desc is not None:
                         f.write(f'  - <small>{prefix}{module.desc}{suffix}</small>\n')
+
+                    # write files inside folder
+                    for file_code, file in enumerate(module.folder, start=file_code):
+                        name = unquote(os.path.basename(file))
+                        code = f's{sec_code}-{mod_code}-f{file_code}'
+                        f.write(f'  - [{prefix}{name}{suffix}][{code}]\n')
 
                 # write newline if no modules are written
                 if mod_code > 0:
                     f.write('\n')
 
-                # write module and filesreferences
+                # write module and files references
                 for mod_code, module in enumerate(section.modules, start=1):
                     f.write(f'[s{sec_code}-{mod_code}]: {module.href} "{module.tags}"\n')
-                    for file_code, file in enumerate(module.files, start=1):
+                    for file_code, file in enumerate(module.files + module.folder, start=1):
                         code = f's{sec_code}-{mod_code}-f{file_code}'
                         f.write(f'[{code}]: {file} "Direct Link"\n')
 
