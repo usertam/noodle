@@ -524,7 +524,40 @@ for site in sites:
         continue
     prev_data = jsonpickle.loads(prev.tree[name].data.decode())
 
+    # generate diff
+    diff = Diff(site_data, prev_data)
+
     # write diff markdown
     file = os.path.join('markdown', code + '.diff.md')
-    diff = Diff(site_data, prev_data)
-    diff.write_markdown(file, datetime.fromtimestamp(prev.commit_time).astimezone(), site['time'].astimezone())
+    time_a = datetime.fromtimestamp(prev.commit_time).astimezone()
+    time_b = site['time'].astimezone()
+    diff.write_markdown(file, time_a, time_b)
+
+    print("[*] Fetching new course materials.")
+
+    # download new files
+    files = diff.files()
+    total = len(files)
+
+    for index, link in enumerate(files, start=1):
+        # set file name and download location
+        name = unquote(os.path.basename(link))
+        dl_dir = os.path.join('download', diff.code)
+
+        # print status
+        status = f"[*] {diff.code}: {index}/{total}"
+        print(status + padding, end='\r')
+
+        # create download dir
+        if not os.path.exists(dl_dir):
+            os.makedirs(dl_dir)
+        
+        # download
+        file = os.path.join(dl_dir, name)
+        r = sess.get(link)
+        with open(file, "wb") as f:
+            f.write(r.content)
+
+    # print status
+    status = f"[+] {diff.code}: {total} files fetched."
+    print(status + padding)
