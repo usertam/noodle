@@ -493,8 +493,15 @@ for site in sites:
 
 # write tree and compare; create commit only if there are changes
 tree_id = tree.write()
-signature = pygit2.Signature('noodle', 'noodle@localhost')
-if prev is None or len(repo.get(tree_id).diff_to_tree(prev.tree)) != 0:
+if prev is not None:
+    tree_diff = prev.tree.diff_to_tree(repo.get(tree_id))
+else:
+    empty = repo.get(repo.TreeBuilder().write())
+    tree_diff = empty.diff_to_tree(repo.get(tree_id))
+
+if len(tree_diff) > 0:
+    # noodle default signature
+    signature = pygit2.Signature('noodle', 'noodle@localhost')
     # create commit
     commit_id = repo.create_commit(
         head.name if head is not None else 'refs/heads/master',
@@ -504,9 +511,16 @@ if prev is None or len(repo.get(tree_id).diff_to_tree(prev.tree)) != 0:
         [ head.target ] if head is not None else []
     )
 
+# print git status
+status = tree_diff.stats.format(2, 1)
+print('[*] Git:' + status, end='')
+
 # create markdown dir
 if not os.path.exists('markdown'):
     os.mkdir('markdown')
+
+# reserved for download function
+dl_targets = []
 
 # write site and diff markdowns
 for site in sites:
@@ -520,21 +534,31 @@ for site in sites:
 
     # load the previous site, skip if none exists
     name = code + '.json'
-    if prev is None or name not in prev.tree:
-        continue
-    prev_data = jsonpickle.loads(prev.tree[name].data.decode())
+    if prev is not None and name in prev.tree:
+        # generate diff
+        prev_data = jsonpickle.loads(prev.tree[name].data.decode())
+        diff = Diff(site_data, prev_data)
 
-    # generate diff
-    diff = Diff(site_data, prev_data)
+        # write diff markdown
+        file = os.path.join('markdown', code + '.diff.md')
+        time_a = datetime.fromtimestamp(prev.commit_time).astimezone()
+        time_b = site['time'].astimezone()
+        diff.write_markdown(file, time_a, time_b)
 
-    # write diff markdown
-    file = os.path.join('markdown', code + '.diff.md')
-    time_a = datetime.fromtimestamp(prev.commit_time).astimezone()
-    time_b = site['time'].astimezone()
-    diff.write_markdown(file, time_a, time_b)
+        # determine if there are materials to fetch
+        if len(diff.files()) > 0:
+            dl_targets.append(diff)
+    else:
+        # since this is a new site, download all that exists
+        dl_targets.append(site_data)
 
-    print("[*] Fetching new course materials.")
+if len(dl_targets) == 0:
+    print("[*] Course materials are up-to-date.")
+    sys.exit(0)
 
+print("[*] Fetching new course materials.")
+
+for diff in dl_targets:
     # download new files
     files = diff.files()
     total = len(files)
