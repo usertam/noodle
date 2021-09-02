@@ -217,7 +217,7 @@ class DiffSec:
         self.flag = 0
         lcs_mods = find_lcs(sec_a.modules, sec_b.modules)
         modules = []
-        for i in range(0, max(len(sec_a.modules), len(sec_b.modules)) - 1):
+        for i in range(max(len(sec_a.modules), len(sec_b.modules))):
             if i < len(sec_a.modules) and sec_a.modules[i] not in lcs_mods:
                 module = sec_a.modules[i]
                 module.flag = 1
@@ -240,7 +240,7 @@ class Diff:
 
         # generate whole section diffs
         sections = []
-        for i in range(0, max(len(site.sections), len(prev.sections)) - 1):
+        for i in range(max(len(site.sections), len(prev.sections))):
             if i < len(prev.sections) and prev.sections[i] not in lcs_secs:
                 section = prev.sections[i]
                 section.flag = 1
@@ -266,14 +266,11 @@ class Diff:
     def files(self) -> list:
         ret = []
         for section in self.sections:
-            if section.flag == 1:
-                continue
-            for module in section.modules:
-                if section.flag == 0:
-                    if module.flag == 1:
-                        continue
-                for file in module.files + module.folder:
-                    ret.append(file)
+            if section.flag != 1:
+                for module in section.modules:
+                    if not hasattr(module, 'flag') or module.flag != 1:
+                        for file in module.files + module.folder:
+                            ret.append(file)
         return ret
 
     def write_markdown(self, file, time_a, time_b):
