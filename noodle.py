@@ -43,7 +43,7 @@ class Module:
             page = sess.get(self.href)
             tree = html.fromstring(page.content)
             for link in tree.xpath('//section[@id="region-main"]/div[@role="main"]//a/@href'):
-                if 'pluginfile.php' in link:
+                if 'pluginfile.php' in link and 'submission' not in link:
                     files.append(link.split("?")[0])
 
         # convert files to be immutable
