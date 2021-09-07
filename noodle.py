@@ -164,8 +164,7 @@ class Site:
                     for file_code, file in enumerate(module.folder, start=file_code):
                         name = unquote(os.path.basename(file))
                         code = f's{sec_code}-{mod_code}-f{file_code}'
-                        f.write(' ' * 2 + f'- [{name}][{code}]\n')
-                        f.write(' ' * 6 + f'<file>DL: [{name}][{code}]</file>\n')
+                        f.write(f'  - [{name}][{code}]\n')
 
                 # write newline if no modules are written
                 if mod_code > 0:
@@ -352,8 +351,7 @@ class Diff:
                     for file_code, file in enumerate(module.folder, start=file_code):
                         name = unquote(os.path.basename(file))
                         code = f's{sec_code}-{mod_code}-f{file_code}'
-                        f.write(' ' * 2 + f'- [{prefix}{name}{suffix}][{code}]\n')
-                        f.write(' ' * 6 + f'<file>DL: [{prefix}{name}{suffix}][{code}]</file>\n')
+                        f.write(f'  - [{prefix}{name}{suffix}][{code}]\n')
 
                 # write newline if no modules are written
                 if mod_code > 0:
