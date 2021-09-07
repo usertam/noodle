@@ -125,7 +125,7 @@ class Site:
             f.write('\n')
 
             # write custom css style
-            f.write('<style>\nfile { float: right; font-size: 70%; }\n</style>\n')
+            f.write('<style>\nul > li > ul > li { font-size: 75%; }\n</style>\n')
             f.write('\n')
 
             for sec_code, section in enumerate(self.sections, start=1):
@@ -134,7 +134,7 @@ class Site:
 
                 # write section summary if any
                 if section.desc is not None:
-                    f.write(f'> <small>{section.desc}</small>\n')
+                    f.write(f'> {section.desc}\n')
                     f.write('\n')
 
                 # write module entires
@@ -147,18 +147,18 @@ class Site:
                     file_code = 1
                     if len(module.files) > 0:
                         # module files header
-                        f.write(' ' * 4 + '<file>DL: ')
+                        f.write(' ' * 2 + '- DL: ')
                         for file_code, file in enumerate(module.files, start=1):
                             name = unquote(os.path.basename(file))
                             code = f's{sec_code}-{mod_code}-f{file_code}'
                             if file_code > 1: f.write(', ')
                             f.write(f'[{name}][{code}]')
                         # module files footer
-                        f.write('</file>\n')
+                        f.write('\n')
 
                     # write module description if any
                     if module.desc is not None:
-                        f.write(f'  - <small>{module.desc}</small>\n')
+                        f.write(f'  - {module.desc}\n')
 
                     # write files inside folder
                     for file_code, file in enumerate(module.folder, start=file_code):
@@ -292,8 +292,9 @@ class Diff:
             f.write('<style>\n')
             f.write('add { color: green; }\n')
             f.write('del { color: red; text-decoration: none; }\n')
-            f.write('file { float: right; font-size: 70%; }\n')
+            f.write('ul > li > ul > li { font-size: 75%; }\n')
             f.write('</style>\n')
+            f.write('\n')
 
             for sec_code, section in enumerate(self.sections, start=1):
                 # color output according to diff flags
@@ -309,7 +310,7 @@ class Diff:
 
                 # write section summary if any
                 if section.desc is not None:
-                    f.write(f'> <small>{prefix}{section.desc}{suffix}</small>\n')
+                    f.write(f'> {prefix}{section.desc}{suffix}\n')
                     f.write('\n')
 
                 # write module entires
@@ -334,18 +335,18 @@ class Diff:
                     file_code = 1
                     if len(module.files) > 0:
                         # module files header
-                        f.write(' ' * 4 + '<file>DL: ')
+                        f.write(' ' * 2 + '- DL: ')
                         for file_code, file in enumerate(module.files, start=1):
                             name = unquote(os.path.basename(file))
                             code = f's{sec_code}-{mod_code}-f{file_code}'
                             if file_code > 1: f.write(', ')
                             f.write(f'[{prefix}{name}{suffix}][{code}]')
                         # module files footer
-                        f.write('</file>\n')
+                        f.write('\n')
 
                     # write module description if any
                     if module.desc is not None:
-                        f.write(f'  - <small>{prefix}{module.desc}{suffix}</small>\n')
+                        f.write(f'  - {prefix}{module.desc}{suffix}\n')
 
                     # write files inside folder
                     for file_code, file in enumerate(module.folder, start=file_code):
