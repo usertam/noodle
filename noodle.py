@@ -393,6 +393,11 @@ def login(key):
         print("[-] Unable to reach Moodle.")
         sys.exit(0)
 
+    # halt if no proper credentials provided
+    if 'user' or 'pass' not in key:
+        print("[-] Invaild credentials.")
+        sys.exit(0)
+
     # authenticate with payload
     payload = {
         'logintoken': token,
@@ -430,16 +435,16 @@ print("[*] Authenticating with Moodle.")
 global sess, user
 sess, user = login(conf['login'][0])
 user = user.title()
-
 print(f"[+] Greetings, {user}! <3")
-print("[*] Fetching course sites.")
 
 # import site entries to fetch
 sites = conf['sites']
 if not sites:
     print("[-] Nothing in site entries!")
-    print("[-] Configure sites to fetch in config.json.")
+    print("[*] Configure sites to fetch in config.json.")
     sys.exit(0)
+else:
+    print("[*] Fetching course sites.")
 
 # variables for fetch progress
 prog_now = 0
@@ -552,8 +557,8 @@ for site in sites:
 if len(dl_targets) == 0:
     print("[*] Course materials are up-to-date.")
     sys.exit(0)
-
-print("[*] Fetching new course materials.")
+else:
+    print("[*] Fetching new course materials.")
 
 for diff in dl_targets:
     # download new files
