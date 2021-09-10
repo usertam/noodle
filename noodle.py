@@ -5,6 +5,7 @@ import os, os.path
 import sys
 from datetime import datetime
 from urllib.parse import unquote
+from base64 import b64decode
 
 import jsonpickle
 import pygit2
@@ -369,17 +370,17 @@ class Diff:
                 f.write('\n')
 
 
-def load_config():
+def load_config(key):
     try:
         with open('config.json', 'r') as f:
-            config = json.load(f)
+            config = json.load(f)[key]
     except:
         print("[-] Unable to read config.")
         sys.exit(0)
     return config
 
 
-def login(key):
+def login():
     # initialize new session
     sess = requests.session()
 
@@ -393,17 +394,19 @@ def login(key):
         print("[-] Unable to reach Moodle.")
         sys.exit(0)
 
+    # authenticate with payload; and
     # halt if no proper credentials provided
-    if 'user' or 'pass' not in key:
+    try:
+        key = b64decode(load_config('login')).decode().split(':', 1)
+        payload = {
+            'logintoken': token,
+            'username': key.pop(0),
+            'password': key.pop(0)
+        }
+    except:
         print("[-] Invaild credentials.")
         sys.exit(0)
 
-    # authenticate with payload
-    payload = {
-        'logintoken': token,
-        'username': key['user'],
-        'password': key['pass']
-    }
     sess.post(login_url, data=payload)
 
     # check login status by extracting username
@@ -422,9 +425,6 @@ def login(key):
 abspath = os.path.abspath(sys.argv[0])
 os.chdir(os.path.dirname(abspath))
 
-# load config
-conf = load_config()
-
 print("=" * 48)
 print("[*] Noodle: Automated web scraper for Moodle.")
 print("[*] Started on:", datetime.now().strftime('%c'))
@@ -433,12 +433,12 @@ print("=" * 48)
 # create login session
 print("[*] Authenticating with Moodle.")
 global sess, user
-sess, user = login(conf['login'][0])
+sess, user = login()
 user = user.title()
 print(f"[+] Greetings, {user}! <3")
 
 # import site entries to fetch
-sites = conf['sites']
+sites = load_config('sites')
 if not sites:
     print("[-] Nothing in site entries!")
     print("[*] Configure sites to fetch in config.json.")
