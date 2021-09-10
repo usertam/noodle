@@ -429,6 +429,7 @@ print("=" * 48)
 print("[*] Authenticating with Moodle.")
 global sess, user
 sess, user = login(conf['login'][0])
+user = user.title()
 
 print(f"[+] Greetings, {user}! <3")
 print("[*] Fetching course sites.")
