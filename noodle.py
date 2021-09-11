@@ -490,10 +490,10 @@ for site in sites:
 # write tree and compare; create commit only if there are changes
 tree_id = tree.write()
 if prev is not None:
-    tree_diff = prev.tree.diff_to_tree(repo.get(tree_id))
+    tree_diff = repo.get(tree_id).diff_to_tree(prev.tree, 1)
 else:
     empty = repo.get(repo.TreeBuilder().write())
-    tree_diff = empty.diff_to_tree(repo.get(tree_id))
+    tree_diff = repo.get(tree_id).diff_to_tree(empty, 1)
 
 if tree_diff:
     # noodle default signature
