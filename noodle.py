@@ -438,35 +438,29 @@ user = user.title()
 print(f"[+] Greetings, {user}! <3")
 
 # import site entries to fetch
-sites = load_config('sites')
-if not sites:
+conf = load_config('sites')
+if not conf:
     print("[-] Nothing in site entries!")
     print("[*] Configure sites to fetch in config.json.")
     sys.exit(0)
 else:
     print("[*] Fetching course sites.")
 
-# variables for fetch progress
-prog_now = 0
-prog_max = len(sites)
-padding = ' ' * 16
+# fetch and parse sites
+sites = []
+total = len(conf)
 
-# fetch sites and create data objects
-for site in sites:
+for index, site in enumerate(conf, start=1):
     # print progress
-    prog_now += 1
-    status = f"[*] {prog_now}/{prog_max}: {site['name']}"
-    print(status + padding, end='\r')
+    status = f"[*] {index}/{total}: {site['name']}"
+    print(status + ' ' * 4, end='\r')
 
     # parse site as html tree
     page = sess.get(site['href'])
     tree = html.fromstring(page.content)
+    sites.append(Site(tree))
 
-    # create object from tree and append data to object
-    site['data'] = Site(tree)
-    site['time'] = datetime.now()
-
-print(f"[+] {prog_now} sites fetched." + padding)
+print(f"[+] {total} sites fetched." + ' ' * 12)
 
 # initialize git repo
 if not os.path.exists('json/.git'):
@@ -486,8 +480,8 @@ except:
 # write site data to working tree
 for site in sites:
     # set site filename and contents
-    name = site['data'].code + '.json'
-    data = jsonpickle.encode(site['data'], indent=4)
+    name = site.code + '.json'
+    data = jsonpickle.encode(site, indent=4)
 
     # create blob and write to tree
     blob = repo.create_blob(data)
@@ -501,7 +495,7 @@ else:
     empty = repo.get(repo.TreeBuilder().write())
     tree_diff = empty.diff_to_tree(repo.get(tree_id))
 
-if len(tree_diff) > 0:
+if tree_diff:
     # noodle default signature
     signature = pygit2.Signature('noodle', 'noodle@localhost')
     # create commit
@@ -526,35 +520,31 @@ dl_targets = []
 
 # write site and diff markdowns
 for site in sites:
-    # set site variables
-    site_data = site['data']
-    code = site_data.code
-
     # write site data markdown
-    file = os.path.join('markdown', code + '.md')
-    site_data.write_markdown(file)
+    file = os.path.join('markdown', site.code + '.md')
+    site.write_markdown(file)
 
     # load the previous site, skip if none exists
-    name = code + '.json'
+    name = site.code + '.json'
     if prev is not None and name in prev.tree:
         # generate diff
-        prev_data = jsonpickle.loads(prev.tree[name].data.decode())
-        diff = Diff(site_data, prev_data)
+        prev_site = jsonpickle.loads(prev.tree[name].data.decode())
+        diff = Diff(site, prev_site)
 
         # write diff markdown
-        file = os.path.join('markdown', code + '.diff.md')
+        file = os.path.join('markdown', site.code + '.diff.md')
         time_a = datetime.fromtimestamp(prev.commit_time).astimezone()
-        time_b = site['time'].astimezone()
+        time_b = datetime.now().astimezone()
         diff.write_markdown(file, time_a, time_b)
 
         # determine if there are materials to fetch
-        if len(diff.files()) > 0:
+        if diff.files():
             dl_targets.append(diff)
     else:
         # since this is a new site, download all that exists
-        dl_targets.append(site_data)
+        dl_targets.append(site)
 
-if len(dl_targets) == 0:
+if not dl_targets:
     print("[*] Course materials are up-to-date.")
     sys.exit(0)
 else:
@@ -572,7 +562,7 @@ for diff in dl_targets:
 
         # print status
         status = f"[*] {diff.code}: {index}/{total}"
-        print(status + padding, end='\r')
+        print(status + ' ' * 4, end='\r')
 
         # create download dir
         if not os.path.exists(dl_dir):
@@ -586,4 +576,4 @@ for diff in dl_targets:
 
     # print status
     status = f"[+] {diff.code}: {total} files fetched."
-    print(status + padding)
+    print(status + ' ' * 4)
