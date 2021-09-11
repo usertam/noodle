@@ -415,7 +415,7 @@ def login():
         tree = html.fromstring(page.content)
         user = tree.xpath('//span[@class="usertext mr-1"]/text()')[0]
     except:
-        print("[-] Unable to login. Check the password?")
+        print("[-] Unable to login.")
         sys.exit(0)
 
     return sess, user
