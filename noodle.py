@@ -495,7 +495,7 @@ else:
     empty = repo.get(repo.TreeBuilder().write())
     tree_diff = repo.get(tree_id).diff_to_tree(empty, 1)
 
-if tree_diff:
+if tree_diff and 'no_commit' not in sys.argv[1:]:
     # noodle default signature
     signature = pygit2.Signature('noodle', 'noodle@localhost')
     # create commit
