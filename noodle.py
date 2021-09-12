@@ -544,9 +544,24 @@ for site in sites:
         # since this is a new site, download all that exists
         dl_targets.append(site)
 
+print("[*] Generating markdown index.")
+
+with open(os.path.join('markdown', 'index.md'), 'w') as f:
+    f.write('# Noodle\n\n')
+    f.write('<style>\nul > li > ul > li { font-size: 80%; }\n</style>\n\n')
+    f.write('## All sites\n\n')
+    for site in sites:
+        f.write(f"- [{site.title}]({site.code + '.md'})\n")
+        try:
+            with open(os.path.join('markdown', site.code + '.diff.md'), 'r') as diff:
+                diff.readline()
+                diff_delta = diff.readline().split('`')[3]
+                f.write(f"  - [`{diff_delta}`]({site.code + '.diff.md'})\n")
+        except:
+            f.write(f"  - [`DIFF: None`]\n")
+
 if not dl_targets:
     print("[*] Course materials are up-to-date.")
-    sys.exit(0)
 else:
     print("[*] Fetching new course materials.")
 
