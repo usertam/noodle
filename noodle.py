@@ -230,10 +230,17 @@ class DiffSec:
 
 
 class Diff:
-    def __init__(self, site, prev):
+    def __init__(self, site, prev, time_a, time_b):
         # basic info
         self.title = site.title
         self.code = site.code
+
+        # format commit times
+        if time_a.strftime('%x') == time_b.strftime('%x'):
+            self.time_b = time_b.strftime('%H:%M')
+        else:
+            self.time_b = time_b.strftime('%b %d %H:%M')
+        self.time_a = time_a.strftime('%b %d %H:%M')
 
         # build longest common subsequence
         lcs_secs = find_lcs(site.sections, prev.sections)
@@ -273,20 +280,13 @@ class Diff:
                             ret.append(file)
         return ret
 
-    def write_markdown(self, file, time_a, time_b):
+    def write_markdown(self, file):
         if len(self.sections) == 0: return
         with open(file, 'w') as f:
-            # format commit times
-            if time_a.strftime('%x') == time_b.strftime('%x'):
-                time_b = time_b.strftime('%H:%M')
-            else:
-                time_b = time_b.strftime('%b %d %H:%M')
-            time_a = time_a.strftime('%b %d %H:%M')
-
             # write site title and code
             f.write(f'# {self.title}\n')
             f.write(f'`{self.code}` ')
-            f.write(f'`DIFF: {time_a} ➝ {time_b}`\n')
+            f.write(f'`DIFF: {self.time_a} ➝ {self.time_b}`\n')
             f.write('\n')
 
             # write custom css style
@@ -529,13 +529,13 @@ for site in sites:
     if prev is not None and name in prev.tree:
         # generate diff
         prev_site = jsonpickle.loads(prev.tree[name].data.decode())
-        diff = Diff(site, prev_site)
+        time_a = datetime.fromtimestamp(prev.commit_time).astimezone()
+        time_b = datetime.now().astimezone()
+        diff = Diff(site, prev_site, time_a, time_b)
 
         # write diff markdown
         file = os.path.join('markdown', site.code + '.diff.md')
-        time_a = datetime.fromtimestamp(prev.commit_time).astimezone()
-        time_b = datetime.now().astimezone()
-        diff.write_markdown(file, time_a, time_b)
+        diff.write_markdown(file)
 
         # determine if there are materials to fetch
         if diff.files():
