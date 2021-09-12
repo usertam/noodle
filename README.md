@@ -10,22 +10,9 @@ python3 -m pip install -r requirements.txt
 
 ### Configuration
 Noodle will authenticate and fetch the sites using `config.json`.  
-The config file should resemble the below:
-```
-{
-    "login": [
-        {
-            "user": "MOODLE_USERNAME",
-            "pass": "MOODLE_PASSWORD"
-        }
-    ],
-    "sites": [
-        {
-            "name": "COURSE_CODE",
-            "href": "COURSE_URL"
-        }
-    ]
-}
+The setup script first asks for the credentials, then will parse the sites automatically.
+```sh
+python3 noodle_config.py
 ```
 
 ## Usage
