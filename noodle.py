@@ -413,7 +413,7 @@ def login():
     try:
         page = sess.get('https://moodle.uowplatform.edu.au/my/')
         tree = html.fromstring(page.content)
-        user = tree.xpath('//span[@class="usertext mr-1"]/text()')[0]
+        user = tree.xpath('//span[@class="usertext mr-1"]/text()')[0].title()
     except:
         print("[-] Unable to login.")
         sys.exit(0)
@@ -434,7 +434,6 @@ print("=" * 48)
 print("[*] Authenticating with Moodle.")
 global sess, user
 sess, user = login()
-user = user.title()
 print(f"[+] Greetings, {user}! <3")
 
 # import site entries to fetch
