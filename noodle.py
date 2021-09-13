@@ -114,8 +114,8 @@ class Site:
         ret = []
         for section in self.sections:
             for module in section.modules:
-                for file in module.files + module.folder:
-                    ret.append(file)
+                ret += module.files
+                ret += module.folder
         return ret
 
     def write_markdown(self, file):
@@ -276,8 +276,8 @@ class Diff:
             if section.flag != 1:
                 for module in section.modules:
                     if not hasattr(module, 'flag') or module.flag != 1:
-                        for file in module.files + module.folder:
-                            ret.append(file)
+                        ret += module.files
+                        ret += module.folder
         return ret
 
     def write_markdown(self, file):
