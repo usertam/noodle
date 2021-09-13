@@ -92,11 +92,11 @@ for course_tree in tree.xpath('//div[@id="courses"]//div[contains(@id, "course-"
 print()
 print("[*] Generating config.")
 
-data = {}
-data['login'] = b64encode(f'{key.pop(0)}:{key.pop(0)}'.encode('ascii')).decode("ascii")
-data['sites'] = sites
-
+conf = {
+    'login': b64encode(f'{key.pop(0)}:{key.pop(0)}'.encode('ascii')).decode("ascii")
+    'sites': sites
+}
 with open('config.json', 'w') as f:
-    f.write(jsonpickle.encode(data, indent=4))
+    f.write(jsonpickle.encode(conf, indent=4))
 
 print('[*] Done!')
