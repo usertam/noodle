@@ -93,7 +93,7 @@ print()
 print("[*] Generating config.")
 
 conf = {
-    'login': b64encode(f'{key.pop(0)}:{key.pop(0)}'.encode('ascii')).decode("ascii")
+    'login': b64encode(f'{key.pop(0)}:{key.pop(0)}'.encode('ascii')).decode("ascii"),
     'sites': sites
 }
 with open('config.json', 'w') as f:
