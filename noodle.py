@@ -557,7 +557,7 @@ with open(os.path.join('markdown', 'index.md'), 'w') as f:
                 diff_delta = diff.readline().split('`')[3]
                 f.write(f"  - [`{diff_delta}`]({site.code + '.diff.md'})\n")
         except:
-            f.write(f"  - [`DIFF: None`]\n")
+            f.write(f"  - `DIFF: None`\n")
 
 if not dl_targets:
     print("[*] Course materials are up-to-date.")
