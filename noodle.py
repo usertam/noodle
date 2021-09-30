@@ -286,7 +286,7 @@ class Diff:
             # write site title and code
             f.write(f'# {self.title}\n')
             f.write(f'`{self.code}` ')
-            f.write(f'`DIFF: {self.time_a} ➝ {self.time_b}`\n')
+            f.write(f'`DIFF: {self.time_a} -> {self.time_b}`\n')
             f.write('\n')
 
             # write custom css style
